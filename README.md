@@ -36,7 +36,7 @@ ibb-traffic-prediction/
 
 ## Quick Start
 
-### Using Docker (Recommended)
+### Using Docker 
 
 1. **Clone and setup**:
    ```bash
@@ -52,30 +52,6 @@ ibb-traffic-prediction/
 3. **Access API**:
    - API: http://localhost:8000
    - API Docs: http://localhost:8000/docs
-
-### Manual Setup
-
-1. **Install dependencies**:
-   ```bash
-   source venv/bin/activate
-   pip install -r requirements.txt
-   ```
-
-2. **Setup PostgreSQL**:
-   ```bash
-   # Install and configure PostgreSQL
-   createdb ibb_traffic
-   ```
-
-3. **Configure environment**:
-   ```bash
-   export DATABASE_URL="postgresql://postgres:password@localhost:5432/ibb_traffic"
-   ```
-
-4. **Run application**:
-   ```bash
-   python main.py
-   ```
 
 ## API Endpoints
 
@@ -159,35 +135,9 @@ CREATE TABLE traffic_data (
 - **Training Trigger**: Every 10 new data points collected
 - **Model Persistence**: Automatic saving/loading with performance metrics
 
-### Model Performance
-- **Metrics**: MAE, MSE, R² score for each horizon
-- **Validation**: Time-series cross-validation
-- **Feature Importance**: Automated feature ranking
-- **Monitoring**: Training status available via API
-
-## Development
-
-The project follows Python best practices:
-
-- **Clean Architecture**: Separated concerns with clear boundaries
-- **Type Hints**: Full type annotation support
-- **Error Handling**: Comprehensive exception handling
-- **Logging**: Structured logging throughout
-- **Testing Ready**: Modular design for easy testing
-
 ## Monitoring
 
 - Health check endpoint for service monitoring
 - Comprehensive logging for debugging
 - Database connection health checks
 
-## Scaling Considerations
-
-- **Horizontal Scaling**: FastAPI supports multiple workers
-- **Database**: PostgreSQL with connection pooling
-- **Caching**: Ready for Redis integration
-- **Load Balancing**: Docker Compose can be extended
-
-## License
-
-This project is built for Istanbul Municipality traffic data analysis.
