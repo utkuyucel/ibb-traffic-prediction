@@ -1,7 +1,7 @@
 """Pydantic models for API."""
 
 from datetime import datetime
-from typing import Optional, Dict
+
 from pydantic import BaseModel
 
 
@@ -11,7 +11,7 @@ class TrafficDataResponse(BaseModel):
     ti: int
     ti_an: int
     ti_av: int
-    
+
     class Config:
         from_attributes = True
 
@@ -23,7 +23,7 @@ class PredictionResponse(BaseModel):
 
 
 class MultiHorizonPredictionResponse(BaseModel):
-    predictions: Dict[int, Optional[int]]  # horizon -> prediction
+    predictions: dict[int, int | None]  # horizon -> prediction
     timestamp: datetime
     status: str
-    training_status: Dict[int, bool]  # horizon -> is_trained
+    training_status: dict[int, bool]  # horizon -> is_trained
