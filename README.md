@@ -141,3 +141,58 @@ CREATE TABLE traffic_data (
 - Comprehensive logging for debugging
 - Database connection health checks
 
+## Development
+
+### Setup Development Environment
+
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd ibb-traffic-prediction
+   ```
+
+2. **Create virtual environment**:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   # For development tools
+   pip install -e .[dev]
+   ```
+
+### Code Quality
+
+Before pushing code, run the linting script:
+
+```bash
+# Auto-format and fix all linting issues
+./lint.sh
+```
+
+### Running the Application
+
+```bash
+# Activate virtual environment
+source venv/bin/activate
+
+# Start application
+python main.py
+```
+
+### Configuration Files
+
+- **pyproject.toml**: Project configuration with Ruff and pytest settings
+- **requirements.txt**: Production dependencies
+- **lint.sh**: Linting and code quality script
+
+### Code Style Guidelines
+
+- **Line length**: 100 characters maximum
+- **Import organization**: Automated with Ruff's isort functionality
+- **Formatting**: Handled by Ruff formatter
+- **Linting**: Comprehensive checks with Ruff
+
