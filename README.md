@@ -6,58 +6,59 @@ A comprehensive system for collecting, analyzing, and predicting Istanbul's traf
 
 ```mermaid
 flowchart TD
-    %% External Data Source
-    EXT[🌐 Istanbul Traffic API]
-    USER[👥 Users]
+    %% ===== TITLE =====
+    TITLE([Istanbul Traffic Prediction System]):::title
     
-    %% Docker Containers
-    subgraph DOCKER1[� FastAPI Container]
-        API[FastAPI Backend<br/>REST API & Predictions]
-        SCHEDULER[Scheduler Service<br/>Data Collection & ML Training]
-        COLLECTOR[Data Collector<br/>Extract → Transform → Load]
-        ML[ML Predictor<br/>Multi-Horizon Forecasting]
+    %% ===== EXTERNAL ENTITIES =====
+    subgraph EXTERNAL[External Entities]
+        direction TB
+        EXT[🌐 Istanbul Traffic API]:::external
+        USER[👥 End Users]:::external
+    end
+
+    %% ===== CORE SYSTEM =====
+    subgraph DOCKER[ Dockerized Services ]
+        direction LR
         
-        SCHEDULER -.-> COLLECTOR
-        SCHEDULER -.-> ML
-        API -.-> SCHEDULER
+        subgraph DOCKER1[🐳 FastAPI Container]
+            API[<b>FastAPI Backend</b><br/>• REST API Endpoints<br/>• Prediction Requests]:::container
+            SCHEDULER[<b>Scheduler Service</b><br/>• Trigger Data Collection<br/>• Initiate ML Training]:::container
+            COLLECTOR[<b>Data Collector</b><br/>• ETL Pipeline<br/>• Data Validation]:::container
+            ML[<b>ML Predictor</b><br/>• Multi-Horizon Forecasting<br/>• Model Inference]:::container
+        end
+
+        subgraph DOCKER2[💾 PostgreSQL Container]
+            DB[(<b>Traffic Database</b><br/>• Historical Records<br/>• Real-time Metrics)]:::database
+        end
     end
-    
-    subgraph DOCKER2[🐳 PostgreSQL Container]
-        DB[(PostgreSQL Database<br/>Traffic Data Storage)]
+
+    %% ===== MODEL STORAGE =====
+    subgraph MODELS[📦 Model Storage]
+        M15[<b>15-min Model</b>]:::model
+        M30[<b>30-min Model</b>]:::model
+        M60[<b>60-min Model</b>]:::model
+        M120[<b>120-min Model</b>]:::model
     end
-    
-    %% ML Models (Persisted)
-    subgraph MODELS[� Model Storage]
-        M15[15min Model]
-        M30[30min Model]
-        M60[60min Model]
-        M120[120min Model]
-    end
-    
-    %% Data Flow
-    EXT -->|Fetch Traffic Data| COLLECTOR
-    COLLECTOR -->|Store Data| DB
-    DB <-->|Query Data| SCHEDULER
-    ML <-->|Save/Load Models| MODELS
-    USER -->|HTTP Requests| API
-    
-    %% Styling
-    classDef external fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000;
-    classDef container fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000;
-    classDef storage fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#000;
-    classDef models fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000;
-    
-    %% Arrow styling
-    linkStyle 0 stroke:#1976d2,stroke-width:3px,color:#000
-    linkStyle 1 stroke:#388e3c,stroke-width:3px,color:#000
-    linkStyle 2 stroke:#1976d2,stroke-width:3px,color:#000
-    linkStyle 3 stroke:#f57c00,stroke-width:3px,color:#000
-    linkStyle 4 stroke:#7b1fa2,stroke-width:3px,color:#000
-    
-    class EXT,USER external;
-    class DOCKER1,DOCKER2 container;
-    class DB storage;
-    class MODELS,M15,M30,M60,M120 models;
+
+    %% ===== DATA FLOW =====
+    USER -->|HTTP Requests<br/>Prediction Queries| API
+    EXT -->|Live Traffic Data<br/>JSON/CSV| COLLECTOR
+    COLLECTOR -->|Cleaned Data<br/>Batch Insert| DB
+    DB -->|Training Data| SCHEDULER
+    SCHEDULER -->|Trigger ETL| COLLECTOR
+    SCHEDULER -->|Start Training| ML
+    ML -->|Save Trained Models| MODELS
+    ML -->|Load Models| MODELS
+    API -->|Request Predictions| ML
+    API -->|Manual Triggers| SCHEDULER
+
+    %% ===== STYLING =====
+    classDef title fill:#2c3e50,stroke:none,color:white,font-size:20px,font-weight:bold
+    classDef external fill:#3498db,stroke:#2980b9,color:white,stroke-width:2px
+    classDef container fill:#9b59b6,stroke:#8e44ad,color:white,stroke-width:2px
+    classDef database fill:#27ae60,stroke:#2ecc71,color:white,stroke-width:2px
+    classDef model fill:#e67e22,stroke:#d35400,color:white,stroke-width:2px
+    linkStyle default stroke:#95a5a6,stroke-width:2px
 ```
 
 
