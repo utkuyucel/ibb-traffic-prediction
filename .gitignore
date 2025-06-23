@@ -60,3 +60,5 @@ models/
 # Application specific
 data/
 
+.mypy_cache/
+.ruff_cache/

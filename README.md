@@ -2,23 +2,6 @@
 
 A comprehensive system for collecting, analyzing, and predicting Istanbul's traffic data using machine learning with advanced logging and model persistence.
 
-## 🚀 Features
-
-### Core Functionality
-- ✅ **Real-time Data Collection**: Fetches traffic data every 60 seconds from Istanbul Municipality API
-- ✅ **PostgreSQL Storage**: Robust database storage with proper indexing
-- ✅ **Multi-Horizon Predictions**: Advanced ML models for 15, 30, 60, and 120-minute traffic forecasts
-- ✅ **Enhanced Machine Learning**: Random Forest models with temporal features and lag variables
-- ✅ **REST API**: FastAPI-based API with automatic documentation
-- ✅ **Docker Support**: Production-ready containerization
-
-### Advanced Features
-- 🔍 **Comprehensive Logging**: Multi-level logging with file rotation
-- 💾 **Model Persistence**: Automatic model saving and loading with PKL files
-- 📊 **Training Metrics**: Detailed model performance tracking
-- ⚡ **Performance Monitoring**: Request timing and system metrics
-- 🎯 **Smart Training**: Automatic model retraining with threshold-based triggers
-
 ## Architecture Overview
 
 ```mermaid
@@ -77,24 +60,9 @@ flowchart TD
     class MODELS,M15,M30,M60,M120 models;
 ```
 
-## Project Structure
-
-```
-ibb-traffic-prediction/
-├── src/
-│   ├── api/             # FastAPI application
-│   ├── database/        # Database models and repository
-│   ├── ml/              # Machine learning predictor
-│   └── services/        # Data collection and scheduling services
-├── docker/              # Docker configuration
-├── config.py            # Application configuration
-├── main.py              # Application entry point
-└── requirements.txt     # Python dependencies
-```
 
 ## Quick Start
 
-### Using Docker 
 
 1. **Clone and setup**:
    ```bash
@@ -199,29 +167,6 @@ CREATE TABLE traffic_data (
 - Comprehensive logging for debugging
 - Database connection health checks
 
-## Development
-
-### Setup Development Environment
-
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   cd ibb-traffic-prediction
-   ```
-
-2. **Create virtual environment**:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   # For development tools
-   pip install -e .[dev]
-   ```
-
 ### Code Quality
 
 Before pushing code, run the linting script:
@@ -231,15 +176,6 @@ Before pushing code, run the linting script:
 ./lint.sh
 ```
 
-### Running the Application
-
-```bash
-# Activate virtual environment
-source venv/bin/activate
-
-# Start application
-python main.py
-```
 
 ### Configuration Files
 
@@ -253,4 +189,3 @@ python main.py
 - **Import organization**: Automated with Ruff's isort functionality
 - **Formatting**: Handled by Ruff formatter
 - **Linting**: Comprehensive checks with Ruff
-
