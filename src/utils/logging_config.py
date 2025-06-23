@@ -8,13 +8,11 @@ from config import config
 
 
 def setup_logging():
-    """Setup comprehensive logging configuration."""
+    """Setup logging configuration."""
     
-    # Create logs directory
     log_dir = Path("logs")
     log_dir.mkdir(exist_ok=True)
     
-    # Create formatters
     detailed_formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(funcName)s() - %(message)s'
     )
@@ -23,44 +21,38 @@ def setup_logging():
         '%(asctime)s - %(levelname)s - %(message)s'
     )
     
-    # Root logger configuration
     root_logger = logging.getLogger()
     root_logger.setLevel(getattr(logging, config.LOG_LEVEL))
     
-    # Console handler
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(simple_formatter)
     root_logger.addHandler(console_handler)
     
-    # File handler for all logs
     file_handler = logging.handlers.RotatingFileHandler(
         log_dir / "app.log",
-        maxBytes=10*1024*1024,  # 10MB
+        maxBytes=10*1024*1024,
         backupCount=5
     )
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(detailed_formatter)
     root_logger.addHandler(file_handler)
     
-    # Separate handler for ML activities
     ml_handler = logging.handlers.RotatingFileHandler(
         log_dir / "ml_training.log",
-        maxBytes=5*1024*1024,  # 5MB
+        maxBytes=5*1024*1024,
         backupCount=3
     )
     ml_handler.setLevel(logging.INFO)
     ml_handler.setFormatter(detailed_formatter)
     
-    # ML logger
     ml_logger = logging.getLogger("ml")
     ml_logger.addHandler(ml_handler)
     ml_logger.setLevel(logging.INFO)
     
-    # Data collection logger
     data_handler = logging.handlers.RotatingFileHandler(
         log_dir / "data_collection.log",
-        maxBytes=5*1024*1024,  # 5MB
+        maxBytes=5*1024*1024,
         backupCount=3
     )
     data_handler.setLevel(logging.INFO)

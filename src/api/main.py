@@ -1,4 +1,4 @@
-"""FastAPI application with enhanced logging."""
+"""FastAPI application for Istanbul traffic prediction."""
 
 import logging
 from datetime import datetime
@@ -11,7 +11,6 @@ from src.services import SchedulerService
 from src.utils import setup_logging
 from src.api.schemas import TrafficDataResponse, PredictionResponse, MultiHorizonPredictionResponse
 
-# Setup logging system
 setup_logging()
 logger = logging.getLogger(__name__)
 
@@ -21,26 +20,22 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Global scheduler service
 scheduler_service: Optional[SchedulerService] = None
 
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize application on startup with enhanced logging."""
+    """Initialize application on startup."""
     global scheduler_service
     
     logger.info("🚀 Istanbul Traffic Prediction API starting up...")
     
-    # Create database tables
     create_tables()
     logger.info("✅ Database tables created/verified")
     
-    # Initialize scheduler service
     scheduler_service = SchedulerService()
     logger.info("✅ Scheduler service initialized")
     
-    # Start background task for data collection
     import asyncio
     asyncio.create_task(scheduler_service.start_scheduler())
     logger.info("✅ Background data collection task started")
@@ -52,7 +47,7 @@ async def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """Cleanup on application shutdown with enhanced logging."""
+    """Cleanup on application shutdown."""
     global scheduler_service
     
     logger.info("🛑 Application shutdown initiated...")

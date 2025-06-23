@@ -1,35 +1,16 @@
 """Machine learning service for multi-horizon traffic prediction with model persistence."""
 
 import pickle
-import numpy as np
-import pandas as pd
-from pathlib import Path
-from datetime import datetime
-from typing import List, Tuple, Optional, Dict, Any
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-import logging
-
-# Create ML-specific logger
-ml_logger = logging.getLogger("ml")
-logger = logging.getLogger(__name__)
-
-
-"""Machine learning service for multi-horizon traffic prediction with model persistence."""
-
-import pickle
 import logging
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Tuple, Optional, Dict
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-# Create ML-specific logger
 ml_logger = logging.getLogger("ml")
 logger = logging.getLogger(__name__)
 
@@ -37,25 +18,20 @@ logger = logging.getLogger(__name__)
 class MultiHorizonTrafficPredictor:
     """Enhanced traffic predictor supporting multiple prediction horizons."""
     
-    # Prediction horizons in minutes
     HORIZONS = [15, 30, 60, 120]
     
     def __init__(self):
-        # Models for different prediction horizons
         self.models = {horizon: RandomForestRegressor(n_estimators=100, random_state=42 + horizon) 
                       for horizon in self.HORIZONS}
         self.scalers = {horizon: StandardScaler() for horizon in self.HORIZONS}
         self.is_trained = {horizon: False for horizon in self.HORIZONS}
         
-        # Feature configuration
         self.feature_names = ['ti_lag1', 'ti_lag2', 'ti_lag3', 'ti_an_lag1', 'ti_av_lag1', 
                              'hour_sin', 'hour_cos', 'day_of_week']
         
-        # Model persistence paths
         self.model_dir = Path("models")
         self.model_dir.mkdir(exist_ok=True)
         
-        # Load existing models if available
         self._load_models()
     
     def _get_model_paths(self, horizon: int) -> Tuple[Path, Path, Path]:
@@ -75,13 +51,11 @@ class MultiHorizonTrafficPredictor:
                     
                 model_path, scaler_path, metadata_path = self._get_model_paths(horizon)
                 
-                # Save model and scaler
                 with open(model_path, 'wb') as f:
                     pickle.dump(self.models[horizon], f)
                 with open(scaler_path, 'wb') as f:
                     pickle.dump(self.scalers[horizon], f)
                 
-                # Save metadata
                 metadata = {
                     'horizon_minutes': horizon,
                     'feature_names': self.feature_names,
@@ -112,7 +86,6 @@ class MultiHorizonTrafficPredictor:
                 if not all([model_path.exists(), scaler_path.exists(), metadata_path.exists()]):
                     continue
                 
-                # Load model, scaler, and metadata
                 with open(model_path, 'rb') as f:
                     self.models[horizon] = pickle.load(f)
                 with open(scaler_path, 'rb') as f:
@@ -139,36 +112,31 @@ class MultiHorizonTrafficPredictor:
     def _prepare_enhanced_features(self, data: List[Tuple[int, int, int]], 
                                   target_horizon: int) -> Tuple[Optional[np.ndarray], Optional[np.ndarray]]:
         """Prepare enhanced features including temporal patterns."""
-        min_data_points = max(10, target_horizon + 5)  # Dynamic minimum based on horizon
+        min_data_points = max(10, target_horizon + 5)
         
         if len(data) < min_data_points:
             return None, None
         
         df = pd.DataFrame(data, columns=['ti', 'ti_an', 'ti_av'])
         
-        # Add timestamps (assuming 1-minute intervals, starting from current time)
         current_time = datetime.utcnow()
         timestamps = [current_time.replace(second=0, microsecond=0) - 
                      pd.Timedelta(minutes=i) for i in range(len(data)-1, -1, -1)]
         df['timestamp'] = timestamps
         
-        # Create lag features
         df['ti_lag1'] = df['ti'].shift(1)
         df['ti_lag2'] = df['ti'].shift(2)
         df['ti_lag3'] = df['ti'].shift(3)
         df['ti_an_lag1'] = df['ti_an'].shift(1)
         df['ti_av_lag1'] = df['ti_av'].shift(1)
         
-        # Add temporal features
         df['hour'] = df['timestamp'].dt.hour
         df['hour_sin'] = np.sin(2 * np.pi * df['hour'] / 24)
         df['hour_cos'] = np.cos(2 * np.pi * df['hour'] / 24)
         df['day_of_week'] = df['timestamp'].dt.dayofweek
         
-        # Create target for specific horizon
         df['target'] = df['ti'].shift(-target_horizon)
         
-        # Remove rows with NaN values
         df = df.dropna()
         
         if df.empty:
@@ -201,12 +169,10 @@ class MultiHorizonTrafficPredictor:
                 
                 ml_logger.info(f"Prepared {len(features)} samples for {horizon}m training")
                 
-                # Scale features and train model
                 features_scaled = self.scalers[horizon].fit_transform(features)
                 self.models[horizon].fit(features_scaled, target)
                 self.is_trained[horizon] = True
                 
-                # Calculate training metrics
                 train_predictions = self.models[horizon].predict(features_scaled)
                 train_mae = mean_absolute_error(target, train_predictions)
                 train_mse = mean_squared_error(target, train_predictions)
@@ -221,7 +187,6 @@ class MultiHorizonTrafficPredictor:
                 ml_logger.error(f"Training failed for {horizon}m horizon: {e}")
                 results[horizon] = False
         
-        # Save all successfully trained models
         self._save_models()
         
         training_end = datetime.utcnow()
@@ -255,7 +220,6 @@ class MultiHorizonTrafficPredictor:
                     predictions[horizon] = None
                     continue
                 
-                # Use most recent features for prediction
                 latest_features = features[-1:].reshape(1, -1)
                 features_scaled = self.scalers[horizon].transform(latest_features)
                 
@@ -281,15 +245,60 @@ class MultiHorizonTrafficPredictor:
     def get_training_status(self) -> Dict[int, bool]:
         """Get training status for all horizons."""
         return self.is_trained.copy()
+    
+    def _validate_consecutive_timestamps(self, data_with_timestamps: List[Tuple[datetime, int, int, int]], 
+                                       expected_interval_minutes: int = 1, tolerance_seconds: int = 30) -> bool:
+        """Validate that data points have consecutive timestamps within tolerance."""
+        if len(data_with_timestamps) < 2:
+            return True
+        
+        sorted_data = sorted(data_with_timestamps, key=lambda x: x[0])
+        
+        expected_interval = timedelta(minutes=expected_interval_minutes)
+        tolerance = timedelta(seconds=tolerance_seconds)
+        
+        gaps_found = []
+        
+        for i in range(1, len(sorted_data)):
+            current_time = sorted_data[i][0]
+            previous_time = sorted_data[i-1][0]
+            actual_interval = current_time - previous_time
+            
+            if abs(actual_interval - expected_interval) > tolerance:
+                gap_minutes = actual_interval.total_seconds() / 60
+                gaps_found.append({
+                    'index': i,
+                    'previous_time': previous_time,
+                    'current_time': current_time,
+                    'gap_minutes': gap_minutes
+                })
+        
+        if gaps_found:
+            ml_logger.warning(f"🚨 Non-consecutive data detected! Found {len(gaps_found)} gaps:")
+            for gap in gaps_found:
+                ml_logger.warning(f"   Gap between {gap['previous_time']} and {gap['current_time']}: "
+                                f"{gap['gap_minutes']:.1f} minutes (expected: {expected_interval_minutes} min)")
+            
+            gap_sizes = [gap['gap_minutes'] for gap in gaps_found]
+            avg_gap = sum(gap_sizes) / len(gap_sizes)
+            max_gap = max(gap_sizes)
+            
+            ml_logger.warning(f"   Gap statistics - Average: {avg_gap:.1f}min, Maximum: {max_gap:.1f}min")
+            logger.warning(f"Training skipped: {len(gaps_found)} data gaps detected "
+                         f"(avg: {avg_gap:.1f}min, max: {max_gap:.1f}min)")
+            
+            return False
+        
+        ml_logger.info(f"✅ Data validation passed: {len(sorted_data)} consecutive data points")
+        return True
 
 
-# Legacy compatibility class
 class TrafficPredictor(MultiHorizonTrafficPredictor):
     """Legacy single-horizon predictor for backward compatibility."""
     
     def __init__(self):
         super().__init__()
-        self.default_horizon = 15  # For legacy compatibility
+        self.default_horizon = 15
     
     def prepare_features(self, data: List[Tuple[int, int, int]]) -> Optional[np.ndarray]:
         """Legacy method for preparing features (15-minute horizon only)."""

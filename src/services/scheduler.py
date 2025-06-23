@@ -1,4 +1,4 @@
-"""Scheduler service for periodic data collection and enhanced ML training with multi-horizon predictions."""
+"""Scheduler service for periodic data collection and ML training with multi-horizon predictions."""
 
 import asyncio
 import logging
@@ -20,12 +20,12 @@ class SchedulerService:
     
     def __init__(self):
         self.data_collector = DataCollector()
-        self.predictor = TrafficPredictor()  # Uses the enhanced multi-horizon predictor
-        self.prediction_results: Dict[int, Optional[int]] = {}  # Store multi-horizon predictions
+        self.predictor = TrafficPredictor()
+        self.prediction_results: Dict[int, Optional[int]] = {}
         self.data_count = 0
     
     async def collect_and_store_data(self):
-        """Collect traffic data and store in database with enhanced logging."""
+        """Collect traffic data and store in database."""
         collection_start = datetime.utcnow()
         
         try:
@@ -36,7 +36,6 @@ class SchedulerService:
                 logger.warning("⚠️  Data collection failed - no traffic data received")
                 return
             
-            # Store in database
             db: Session = next(get_db())
             try:
                 stored_data = TrafficRepository.create_traffic_data(
@@ -55,7 +54,6 @@ class SchedulerService:
                 data_logger.info(f"   - Timestamp: {stored_data.inserted_timestamp}")
                 data_logger.info(f"   - Total Records: {self.data_count}")
                 
-                # Check if we should trigger ML training
                 if self.data_count % config.ML_TRIGGER_THRESHOLD == 0:
                     logger.info(f"🎯 ML trigger threshold reached ({config.ML_TRIGGER_THRESHOLD} data points)")
                     ml_logger.info(f"🚨 Training trigger activated - {self.data_count} total data points collected")
@@ -70,47 +68,45 @@ class SchedulerService:
             data_logger.error(f"Collection cycle error: {e}")
     
     async def train_and_predict(self, db: Session):
-        """Train enhanced ML models and make multi-horizon predictions."""
+        """Train ML models and make multi-horizon predictions."""
         training_cycle_start = datetime.utcnow()
         
         try:
-            ml_logger.info("Starting enhanced ML training and prediction cycle")
-            logger.info("Enhanced ML training cycle initiated")
+            ml_logger.info("Starting ML training and prediction cycle")
+            logger.info("ML training cycle initiated")
             
-            # Get recent data for training
-            recent_data = TrafficRepository.get_data_for_prediction(db, limit=200)  # More data for multi-horizon
-            if len(recent_data) < 20:  # Increased minimum for multi-horizon models
-                ml_logger.warning(f"Insufficient data for enhanced ML training: {len(recent_data)} records (minimum: 20)")
-                logger.warning("Enhanced ML training skipped: insufficient data")
+            recent_data_with_timestamps = TrafficRepository.get_data_for_prediction_with_timestamps(db, limit=200)
+            if len(recent_data_with_timestamps) < 20:
+                ml_logger.warning(f"Insufficient data for ML training: {len(recent_data_with_timestamps)} records (minimum: 20)")
+                logger.warning("ML training skipped: insufficient data")
                 return
             
-            ml_logger.info(f"Retrieved {len(recent_data)} records for enhanced training")
+            ml_logger.info(f"Retrieved {len(recent_data_with_timestamps)} records for training")
             
-            # Prepare data for ML
-            training_data = [(row.ti, row.ti_an, row.ti_av) for row in recent_data]
-            training_data.reverse()  # Oldest first for proper time series
+            if not self.predictor._validate_consecutive_timestamps(recent_data_with_timestamps):
+                ml_logger.error("Training aborted: Non-consecutive data detected")
+                logger.error("ML training skipped due to non-consecutive data")
+                return
             
-            ml_logger.info("Data prepared for multi-horizon time series analysis")
+            training_data = [(ti, ti_an, ti_av) for _, ti, ti_an, ti_av in recent_data_with_timestamps]
+            training_data.reverse()
             
-            # Train models for all horizons
+            ml_logger.info("Data prepared for time series analysis")
             training_results = self.predictor.train_models(training_data)
             successful_models = sum(training_results.values())
             
             if successful_models > 0:
-                ml_logger.info(f"Proceeding with multi-horizon predictions using {successful_models} trained models")
+                ml_logger.info(f"Proceeding with predictions using {successful_models} trained models")
                 
-                # Make multi-horizon predictions using recent data
-                prediction_data = training_data[-50:]  # Use last 50 points for prediction
+                prediction_data = training_data[-50:]
                 predictions = self.predictor.predict_multi_horizon(prediction_data)
                 
-                # Store predictions
                 self.prediction_results = predictions
                 
                 cycle_time = (datetime.utcnow() - training_cycle_start).total_seconds()
                 
-                # Log prediction results
                 successful_predictions = sum(1 for p in predictions.values() if p is not None)
-                ml_logger.info("Enhanced training and prediction cycle completed successfully!")
+                ml_logger.info("Training and prediction cycle completed successfully!")
                 ml_logger.info("Multi-horizon prediction results:")
                 for horizon, prediction in predictions.items():
                     if prediction is not None:
@@ -119,19 +115,19 @@ class SchedulerService:
                         ml_logger.info(f"  {horizon}min: N/A (model not trained)")
                 
                 ml_logger.info(f"Total cycle time: {cycle_time:.2f} seconds")
-                logger.info(f"Enhanced ML cycle completed - {successful_predictions} predictions generated (cycle time: {cycle_time:.2f}s)")
+                logger.info(f"ML cycle completed - {successful_predictions} predictions generated (cycle time: {cycle_time:.2f}s)")
             else:
                 ml_logger.error("All model training failed - prediction cycle aborted")
-                logger.error("Enhanced ML training failed for all horizons")
+                logger.error("ML training failed for all horizons")
             
         except Exception as e:
             cycle_time = (datetime.utcnow() - training_cycle_start).total_seconds()
-            ml_logger.error(f"Enhanced ML training/prediction cycle failed after {cycle_time:.2f} seconds: {e}")
-            logger.error(f"Enhanced ML cycle error: {e}")
+            ml_logger.error(f"ML training/prediction cycle failed after {cycle_time:.2f} seconds: {e}")
+            logger.error(f"ML cycle error: {e}")
     
     async def start_scheduler(self):
         """Start the periodic data collection."""
-        logger.info("Starting enhanced scheduler service")
+        logger.info("Starting scheduler service")
         
         while True:
             try:
@@ -143,7 +139,7 @@ class SchedulerService:
     
     def get_latest_prediction(self) -> Optional[int]:
         """Get the latest ML prediction (15-minute horizon for legacy compatibility)."""
-        return self.prediction_results.get(15)  # Return 15-minute prediction for backward compatibility
+        return self.prediction_results.get(15)
     
     def get_multi_horizon_predictions(self) -> Dict[int, Optional[int]]:
         """Get all multi-horizon predictions."""

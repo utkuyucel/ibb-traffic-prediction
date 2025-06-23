@@ -1,6 +1,7 @@
 """Database repository for traffic data operations."""
 
-from typing import List, Optional
+from typing import List, Optional, Tuple
+from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
@@ -28,3 +29,9 @@ class TrafficRepository:
     @staticmethod
     def get_data_for_prediction(db: Session, limit: int = 100) -> List[TrafficData]:
         return db.query(TrafficData).order_by(desc(TrafficData.inserted_timestamp)).limit(limit).all()
+    
+    @staticmethod
+    def get_data_for_prediction_with_timestamps(db: Session, limit: int = 100) -> List[Tuple[datetime, int, int, int]]:
+        """Get traffic data with timestamps for consecutive validation."""
+        data = db.query(TrafficData).order_by(desc(TrafficData.inserted_timestamp)).limit(limit).all()
+        return [(row.inserted_timestamp, row.ti, row.ti_an, row.ti_av) for row in data]
