@@ -19,6 +19,64 @@ A comprehensive system for collecting, analyzing, and predicting Istanbul's traf
 - ⚡ **Performance Monitoring**: Request timing and system metrics
 - 🎯 **Smart Training**: Automatic model retraining with threshold-based triggers
 
+## Architecture Overview
+
+```mermaid
+flowchart TD
+    %% External Data Source
+    EXT[🌐 Istanbul Traffic API]
+    USER[👥 Users]
+    
+    %% Docker Containers
+    subgraph DOCKER1[� FastAPI Container]
+        API[FastAPI Backend<br/>REST API & Predictions]
+        SCHEDULER[Scheduler Service<br/>Data Collection & ML Training]
+        COLLECTOR[Data Collector<br/>Extract → Transform → Load]
+        ML[ML Predictor<br/>Multi-Horizon Forecasting]
+        
+        SCHEDULER -.-> COLLECTOR
+        SCHEDULER -.-> ML
+        API -.-> SCHEDULER
+    end
+    
+    subgraph DOCKER2[🐳 PostgreSQL Container]
+        DB[(PostgreSQL Database<br/>Traffic Data Storage)]
+    end
+    
+    %% ML Models (Persisted)
+    subgraph MODELS[� Model Storage]
+        M15[15min Model]
+        M30[30min Model]
+        M60[60min Model]
+        M120[120min Model]
+    end
+    
+    %% Data Flow
+    EXT -->|Fetch Traffic Data| COLLECTOR
+    COLLECTOR -->|Store Data| DB
+    DB <-->|Query Data| SCHEDULER
+    ML <-->|Save/Load Models| MODELS
+    USER -->|HTTP Requests| API
+    
+    %% Styling
+    classDef external fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000;
+    classDef container fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#000;
+    classDef storage fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#000;
+    classDef models fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#000;
+    
+    %% Arrow styling
+    linkStyle 0 stroke:#1976d2,stroke-width:3px,color:#000
+    linkStyle 1 stroke:#388e3c,stroke-width:3px,color:#000
+    linkStyle 2 stroke:#1976d2,stroke-width:3px,color:#000
+    linkStyle 3 stroke:#f57c00,stroke-width:3px,color:#000
+    linkStyle 4 stroke:#7b1fa2,stroke-width:3px,color:#000
+    
+    class EXT,USER external;
+    class DOCKER1,DOCKER2 container;
+    class DB storage;
+    class MODELS,M15,M30,M60,M120 models;
+```
+
 ## Project Structure
 
 ```
