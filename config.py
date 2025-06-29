@@ -4,6 +4,7 @@ import os
 from dataclasses import dataclass
 
 
+# TODO:For further enhancements and scalability, Uuse new dataclass features for each configurations
 @dataclass(frozen=True)
 class Config:
     # API Configuration
@@ -27,4 +28,5 @@ class Config:
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
 
 
-config = Config()
+if __name__ == "__main__":
+    config = Config()
