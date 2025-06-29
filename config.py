@@ -1,10 +1,10 @@
-"""Configuration settings for Istanbul Municipality Traffic Prediction System."""
-
 import os
 from dataclasses import dataclass
 
 
 # TODO:For further enhancements and scalability, Uuse new dataclass features for each configurations
+
+
 @dataclass(frozen=True)
 class Config:
     # API Configuration
