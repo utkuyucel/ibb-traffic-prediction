@@ -121,6 +121,7 @@ flowchart TD
     "120": false
   }
 }
+```
 
 ## Configuration
 
